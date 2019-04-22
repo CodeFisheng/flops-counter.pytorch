@@ -3,7 +3,7 @@ import torch
 import numpy as np
 
 def get_model_complexity_info(model, input_res, print_per_layer_stat=True, as_strings=True,
-                              input_constructor=None):
+                              input_constructor=None, units=None):
     assert type(input_res) is tuple
     assert len(input_res) == 2
     flops_model = add_flops_counting_methods(model)
@@ -22,15 +22,16 @@ def get_model_complexity_info(model, input_res, print_per_layer_stat=True, as_st
     flops_model.stop_flops_count()
 
     if as_strings:
-        return flops_to_string(flops_count), params_to_string(params_count)
+        return flops_to_string(flops_count, units=units), params_to_string(
+            params_count)
 
     return flops_count, params_count
 
-def flops_to_string(flops, units='GMac', precision=2):
+def flops_to_string(flops, units='GMac', precision=4):
     if units is None:
-        if flops // 10**9 > 0:
+        if flops // 10**11 > 0:
             return str(round(flops / 10.**9, precision)) + ' GMac'
-        elif flops // 10**6 > 0:
+        elif flops // 10**8 > 0:
             return str(round(flops / 10.**6, precision)) + ' MMac'
         elif flops // 10**3 > 0:
             return str(round(flops / 10.**3, precision)) + ' KMac'
@@ -52,12 +53,12 @@ def params_to_string(params_num):
     elif params_num // 10 ** 3:
         return str(round(params_num / 10 ** 3, 2)) + ' k'
 
-def print_model_with_flops(model, units='GMac', precision=3):
+def print_model_with_flops(model, units='MMac', precision=4):
     total_flops = model.compute_average_flops_cost()
 
     def accumulate_flops(self):
         if is_supported_instance(self):
-            return self.__flops__ / model.__batch_counter__
+            return self.__flops__ / model.__batch_counter__, self.__param__
         else:
             sum = 0
             for m in self.children():
