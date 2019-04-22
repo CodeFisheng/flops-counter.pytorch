@@ -58,7 +58,7 @@ def print_model_with_flops(model, units='MMac', precision=4):
 
     def accumulate_flops(self):
         if is_supported_instance(self):
-            return self.__flops__ / model.__batch_counter__, self.__param__
+            return self.__flops__ / model.__batch_counter__#, self.__param__
         else:
             sum = 0
             for m in self.children():
@@ -236,11 +236,13 @@ def conv_flops_counter_hook(conv_module, input, output):
     in_channels = conv_module.in_channels
     out_channels = conv_module.out_channels
     groups = conv_module.groups
+    stride_height, stride_width = conv_module.stride
 
     filters_per_channel = out_channels // groups
     conv_per_position_flops = kernel_height * kernel_width * in_channels * filters_per_channel
 
-    active_elements_count = batch_size * output_height * output_width
+    active_elements_count = batch_size * output_height * output_width / \
+        stride_height / stride_width
 
     if conv_module.__mask__ is not None:
         # (b, 1, h, w)
